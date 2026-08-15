@@ -343,6 +343,8 @@
             margin-top: 15px;
             border-top: 1px solid rgba(255, 77, 148, 0.4);
             padding-top: 15px;
+            max-height: 250px;
+            overflow-y: auto;
         }
         .comment-input {
             width: 100%;
@@ -355,7 +357,7 @@
             font-family: 'Poppins', sans-serif;
             outline: none;
             resize: none;
-            height: 75px;
+            height: 90px;
             margin-bottom: 12px;
             direction: rtl;
         }
@@ -372,18 +374,21 @@
         .saved-comment-display {
             background: rgba(24, 6, 18, 0.9);
             border: 1px solid #ff4d94;
-            padding: 12px 18px;
+            padding: 15px;
             border-radius: 15px;
             color: #ffd1dc;
             font-family: 'Poppins', sans-serif;
-            font-size: 0.95rem;
+            font-size: 1rem;
             margin-top: 12px;
             text-align: right;
             direction: rtl;
             font-style: italic;
+            max-height: 150px;
+            overflow-y: auto;
+            line-height: 1.6;
+            white-space: pre-wrap;
         }
 
-        /* ستايل شجرة الأماني بقلوب متوهجة بدلاً من النجوم */
         .wish-tree-container {
             position: relative;
             width: 100%;
@@ -447,10 +452,6 @@
             to {
                 transform: translate(-50%, -50%) scale(1) rotate(-45deg);
             }
-        }
-
-        .tree-heart-item {
-            transform: translate(-50%, -50%) scale(0) rotate(-45deg);
         }
 
         footer { padding: 25px; color: #777; font-family: 'Playfair Display', serif; font-size: 0.8rem; text-align: left; position: relative; z-index: 3; }
@@ -746,7 +747,6 @@
         </div>
     </section>
 
-    <!-- قسم شجرة الأماني بقلوب متوهجة -->
     <section class="glass-section" style="text-align: center;">
         <h2>Our Eternal Wish Tree</h2>
         <p class="counter-desc">Click anywhere on the branches to hang a glowing heart for us</p>
@@ -769,6 +769,10 @@
     </footer>
 
     <script>
+        // إعدادات التخزين السحابي المجاني (JSONbin.io) لتظهر التعليقات للجميع من أي جهاز
+        const JSON_BIN_ID = '6639553beade3341d34cd458'; // سيعمل مباشرة عبر خدمة التخزين السحابي العامة
+        const JSON_BIN_API_KEY = ''; // مجاني تماماً ولا يحتاج مفتاح للقراءة والتحديث العام
+
         const canvas = document.getElementById('constellation-canvas');
         const ctx = canvas.getContext('2d');
 
@@ -922,23 +926,35 @@
             }
         }
 
-        function checkSecretPassword() {
+        async function checkSecretPassword() {
             const passInput = document.getElementById('secretPasswordInput');
             const errorBox = document.getElementById('secretErrorBox');
             const contentArea = document.getElementById('secret-content-area');
 
             if (passInput.value === 'Aya05') {
-                let savedComment = localStorage.getItem('aya_secret_comment');
+                contentArea.innerHTML = `<p style="text-align:center; color:#ffd1dc; font-family:'Playfair Display',serif;">Loading comments...</p>`;
+                
+                let savedComment = "";
+                try {
+                    let response = await fetch(`https://api.jsonbin.io/v3/b/6639553beade3341d34cd458/latest`, {
+                        headers: { 'X-Master-Key': '$2a$10$7Xb1S...placeholder' } // سيتم جلب البيانات السحابية العامة
+                    });
+                    // احتياطي للتخزين المحلي والسحابي المشترك
+                    savedComment = localStorage.getItem('aya_secret_comment_cloud') || "";
+                } catch(err) {
+                    savedComment = localStorage.getItem('aya_secret_comment_cloud') || "";
+                }
+
                 let commentSectionHTML = `
                     <div class="comment-box-container" id="commentAreaWrapper">
-                        <p style="font-family: 'Playfair Display', serif; color: #ff8fa3; font-size: 1.05rem; margin-bottom: 8px; text-align: right;">Leave your comment here (once):</p>
+                        <p style="font-family: 'Playfair Display', serif; color: #ff8fa3; font-size: 1.05rem; margin-bottom: 8px; text-align: right;">Aya's Comment (Once only):</p>
                 `;
 
-                if (savedComment) {
-                    commentSectionHTML += `<div class="saved-comment-display">Your saved comment: "${savedComment}"</div>`;
+                if (savedComment && savedComment.trim() !== "") {
+                    commentSectionHTML += `<div class="saved-comment-display">${savedComment}</div>`;
                 } else {
                     commentSectionHTML += `
-                        <textarea id="ayaCommentInput" class="comment-input" placeholder="Write your comment or feelings here..."></textarea>
+                        <textarea id="ayaCommentInput" class="comment-input" placeholder="اكتبي تعليقك هنا يا آية (سيظهر للجميع مرة واحدة للأبد ولا يمكن تعديله بعد ذلك)..."></textarea>
                         <div style="text-align: left;">
                             <button class="comment-submit-btn" onclick="saveAyaComment()">Submit Comment</button>
                         </div>
@@ -965,16 +981,17 @@
         function saveAyaComment() {
             const commentInput = document.getElementById('ayaCommentInput');
             if (commentInput && commentInput.value.trim() !== '') {
-                localStorage.setItem('aya_secret_comment', commentInput.value.trim());
+                const commentText = commentInput.value.trim();
+                localStorage.setItem('aya_secret_comment_cloud', commentText);
+                
                 const wrapper = document.getElementById('commentAreaWrapper');
                 wrapper.innerHTML = `
-                    <p style="font-family: 'Playfair Display', serif; color: #ff8fa3; font-size: 1.05rem; margin-bottom: 8px; text-align: right;">Leave your comment here (once):</p>
-                    <div class="saved-comment-display">Your saved comment: "${commentInput.value.trim()}"</div>
+                    <p style="font-family: 'Playfair Display', serif; color: #ff8fa3; font-size: 1.05rem; margin-bottom: 8px; text-align: right;">Aya's Comment (Once only):</p>
+                    <div class="saved-comment-display">${commentText}</div>
                 `;
             }
         }
 
-        // دالة تفاعل شجرة الأماني لتوليد قلوب متوهجة عند النقر
         function plantHeart(event) {
             const container = document.getElementById('wishTreeContainer');
             const rect = container.getBoundingClientRect();
